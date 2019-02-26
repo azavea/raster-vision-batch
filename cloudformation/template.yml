@@ -33,7 +33,9 @@ Metadata:
           - CidrRange
           - SpotFleetBidPercentage
           - GpuLaunchTemplate
+          - GpuLaunchTemplateVersion
           - CpuLaunchTemplate
+          - CpuLaunchTemplateVersion
       -
         Label:
           default: Container Image Parameters (Advanced)
@@ -88,8 +90,12 @@ Metadata:
         default: Subnets
       GpuLaunchTemplate:
         default: Launch Template (GPU)
+      GpuLaunchTemplateVersion:
+        default: Launch Template Version (GPU)
       CpuLaunchTemplate:
         default: Launch Template (CPU)
+      CpuLaunchTemplateVersion:
+        default: Launch Template Version (CPU)
 
 Parameters:
   Prefix:
@@ -221,12 +227,26 @@ Parameters:
       (Optional) The ID of an EC2 Launch Template to associate with the GPU-based
       Batch Compute Environment.
 
+  GpuLaunchTemplateVersion:
+    Type: Number 
+    Default: 1
+    Description:
+      (Optional) The version of the EC2 Launch Template to associate with the GPU-based
+      Batch Compute Environment. 
+
   CpuLaunchTemplate:
     Type: String
     Default: ""
     Description:
       (Optional) The ID of an EC2 Launch Template to associate with the CPU-based
       Batch Compute Environment.
+
+  CpuLaunchTemplateVersion:
+    Type: Number 
+    Default: 1
+    Description:
+      (Optional) The version of the EC2 Launch Template to associate with the CPU-based
+      Batch Compute Environment. 
 
 Conditions:
   UseHostedGpuImage: !Equals [!Ref GpuRepositoryName, ""]
@@ -361,7 +381,9 @@ Resources:
         LaunchTemplate:
           !If
             - UseGpuLaunchTemplate
-            - LaunchTemplateId: !Ref GpuLaunchTemplate
+            -
+              LaunchTemplateId: !Ref GpuLaunchTemplate
+              Version: !Ref GpuLaunchTemplateVersion
             - !Ref "AWS::NoValue"
         Tags:
           Name: !Join ['', [!Ref Prefix, 'RasterVisionGpuComputeEnvironment']]
@@ -391,7 +413,9 @@ Resources:
         LaunchTemplate:
           !If
             - UseCpuLaunchTemplate
-            - LaunchTemplateId: !Ref CpuLaunchTemplate
+            -
+              LaunchTemplateId: !Ref GpuLaunchTemplate
+              Version: !Ref GpuLaunchTemplateVersion
             - !Ref "AWS::NoValue"
         Tags:
           Name: !Join ['', [!Ref Prefix, 'RasterVisionCpuComputeEnvironment']]
