@@ -32,6 +32,8 @@ Metadata:
           - MaximumVCPUs
           - CidrRange
           - SpotFleetBidPercentage
+          - GpuLaunchTemplate
+          - CpuLaunchTemplate
       -
         Label:
           default: Container Image Parameters (Advanced)
@@ -84,6 +86,10 @@ Metadata:
         default: VPC
       SubnetIds:
         default: Subnets
+      GpuLaunchTemplate:
+        default: Launch Template (GPU)
+      CpuLaunchTemplate:
+        default: Launch Template (CPU)
 
 Parameters:
   Prefix:
@@ -208,11 +214,27 @@ Parameters:
       A list of IDs of subnets in which to launch Batch instances (all subnets
       must exist in the VPC you selected)
 
+  GpuLaunchTemplate:
+    Type: String
+    Default: ""
+    Description:
+      (Optional) The ID of an EC2 Launch Template to associate with the GPU-based
+      Batch Compute Environment.
+
+  CpuLaunchTemplate:
+    Type: String
+    Default: ""
+    Description:
+      (Optional) The ID of an EC2 Launch Template to associate with the CPU-based
+      Batch Compute Environment.
+
 Conditions:
   UseHostedGpuImage: !Equals [!Ref GpuRepositoryName, ""]
   UseCustomGpuImage: !Not [!Equals [!Ref GpuRepositoryName, ""]]
   UseHostedCpuImage: !Equals [!Ref CpuRepositoryName, ""]
   UseCustomCpuImage: !Not [!Equals [!Ref CpuRepositoryName, ""]]
+  UseGpuLaunchTemplate: !Not [!Equals [!Ref GpuLaunchTemplate, ""]]
+  UseCpuLaunchTemplate: !Not [!Equals [!Ref CpuLaunchTemplate, ""]]
 
 Resources:
   BatchServiceIAMRole:
@@ -336,6 +358,11 @@ Resources:
         SecurityGroupIds:
           - !Ref ContainerInstanceSecurityGroup
         Subnets: !Ref SubnetIds
+        LaunchTemplate:
+          !If
+            - UseGpuLaunchTemplate
+            - LaunchTemplateId: !Ref GpuLaunchTemplate
+            - !Ref "AWS::NoValue"
         Tags:
           Name: !Join ['', [!Ref Prefix, 'RasterVisionGpuComputeEnvironment']]
           ComputeEnvironment: Raster Vision
@@ -361,6 +388,11 @@ Resources:
         SecurityGroupIds:
           - !Ref ContainerInstanceSecurityGroup
         Subnets: !Ref SubnetIds
+        LaunchTemplate:
+          !If
+            - UseCpuLaunchTemplate
+            - LaunchTemplateId: !Ref CpuLaunchTemplate
+            - !Ref "AWS::NoValue"
         Tags:
           Name: !Join ['', [!Ref Prefix, 'RasterVisionCpuComputeEnvironment']]
           ComputeEnvironment: Raster Vision
